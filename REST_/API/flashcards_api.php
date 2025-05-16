@@ -39,7 +39,27 @@ if ($method === 'GET' && $_GET['action'] === 'get_flashcards') {
     echo json_encode(["success" => true]);
     exit;
 
-}
+} elseif ($method === 'POST' && $_GET['action'] === 'add_flashcard') {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $word = $data['word'] ?? '';
+    $translation = $data['translation'] ?? '';
+    $example = $data['example_sentence'] ?? '';
+
+    if ($word && $translation && $example) {
+        $stmt = $MySQLconection->prepare("INSERT INTO Flashcards (word, translation, example_sentence, created_by) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("ssss", $word, $translation, $example, $_SESSION['user']['id']);
+        if ($stmt->execute()) {
+            echo json_encode(['status' => 'success']);
+        } else {
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'Błąd zapisu']);
+        }
+    } else {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Brak danych']);
+    }
+    exit;
+} 
 else {
     http_response_code(400);
     echo json_encode(["error" => "Nieprawidłowe żądanie"]);
